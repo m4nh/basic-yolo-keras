@@ -14,11 +14,15 @@ from utils import BoundBox
 from backend import TinyYoloFeature, FullYoloFeature, MobileNetFeature, SqueezeNetFeature, Inception3Feature, VGG16Feature, ResNet50Feature
 
 class YOLO(object):
+    DEFAULT_LOG_FOLDER = '/tmp/yolo/logs'
+
     def __init__(self, architecture,
                        input_size, 
                        labels, 
                        max_box_per_image,
                        anchors):
+
+        os.makedirs(YOLO.DEFAULT_LOG_FOLDER, exist_ok=True)
 
         self.input_size = input_size
         
@@ -428,8 +432,10 @@ class YOLO(object):
                                      save_best_only=True, 
                                      mode='min', 
                                      period=1)
-        tb_counter  = len([log for log in os.listdir(os.path.expanduser('~/logs/')) if 'yolo' in log]) + 1
-        tensorboard = TensorBoard(log_dir=os.path.expanduser('~/logs/') + 'yolo' + '_' + str(tb_counter), 
+
+                                    
+        tb_counter  = len([log for log in os.listdir(YOLO.DEFAULT_LOG_FOLDER) if 'yolo' in log]) + 1
+        tensorboard = TensorBoard(log_dir=os.path.join(YOLO.DEFAULT_LOG_FOLDER, 'yolo' + '_' + str(tb_counter)), 
                                   histogram_freq=0, 
                                   #write_batch_performance=True,
                                   write_graph=True, 
