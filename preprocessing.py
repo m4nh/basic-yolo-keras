@@ -18,11 +18,11 @@ def parse_annotation(ann_dir, img_dir, labels=[]):
         if ann[0] == '.':
             continue
         print("PARSING", ann_dir, ann)
-        tree = ET.parse(os.path.join(ann_dir,ann))
+        tree = ET.parse(os.path.join(ann_dir, ann))
 
         for elem in tree.iter():
             if 'filename' in elem.tag:
-                img['filename'] = img_dir + elem.text
+                img['filename'] = os.path.join(img_dir, elem.text)
             if 'width' in elem.tag:
                 img['width'] = int(elem.text)
             if 'height' in elem.tag:
@@ -157,16 +157,18 @@ class BatchGenerator(Sequence):
         return len(self.config['LABELS'])
 
     def size(self):
-        return len(self.images)    
+        return len(self.images)
 
     def load_annotation(self, i):
         annots = []
 
         for obj in self.images[i]['object']:
-            annot = [obj['xmin'], obj['ymin'], obj['xmax'], obj['ymax'], self.config['LABELS'].index(obj['name'])]
+            annot = [obj['xmin'], obj['ymin'], obj['xmax'],
+                     obj['ymax'], self.config['LABELS'].index(obj['name'])]
             annots += [annot]
 
-        if len(annots) == 0: annots = [[]]
+        if len(annots) == 0:
+            annots = [[]]
 
         return np.array(annots)
 
@@ -183,9 +185,14 @@ class BatchGenerator(Sequence):
 
         instance_count = 0
 
-        x_batch = np.zeros((r_bound - l_bound, self.config['IMAGE_H'], self.config['IMAGE_W'], 3))                         # input images
-        b_batch = np.zeros((r_bound - l_bound, 1     , 1     , 1    ,  self.config['TRUE_BOX_BUFFER'], 4))   # list of self.config['TRUE_self.config['BOX']_BUFFER'] GT boxes
-        y_batch = np.zeros((r_bound - l_bound, self.config['GRID_H'],  self.config['GRID_W'], self.config['BOX'], 4+1+len(self.config['LABELS'])))                # desired network output
+        # input images
+        x_batch = np.zeros(
+            (r_bound - l_bound, self.config['IMAGE_H'], self.config['IMAGE_W'], 3))
+        # list of self.config['TRUE_self.config['BOX']_BUFFER'] GT boxes
+        b_batch = np.zeros((r_bound - l_bound, 1, 1, 1,
+                            self.config['TRUE_BOX_BUFFER'], 4))
+        y_batch = np.zeros((r_bound - l_bound, self.config['GRID_H'],  self.config['GRID_W'], self.config['BOX'], 4+1+len(
+            self.config['LABELS'])))                # desired network output
 
         for train_instance in self.images[l_bound:r_bound]:
             # augment input image and fix object's position and size
@@ -218,11 +225,11 @@ class BatchGenerator(Sequence):
 
                         # find the anchor that best predicts this box
                         best_anchor = -1
-                        max_iou     = -1
-                        
-                        shifted_box = BoundBox(0, 
+                        max_iou = -1
+
+                        shifted_box = BoundBox(0,
                                                0,
-                                               center_w,                                                
+                                               center_w,
                                                center_h)
 
                         for i in range(len(self.anchors)):
