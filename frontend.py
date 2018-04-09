@@ -460,7 +460,7 @@ class YOLO(object):
 
         return average_precisions    
 
-    def predict(self, image):
+    def predict(self, image, obj_threshold=0.3, nms_threshold=0.3):
         image_h, image_w, _ = image.shape
         image = cv2.resize(image, (self.input_size, self.input_size))
         image = self.feature_extractor.normalize(image)
@@ -470,7 +470,7 @@ class YOLO(object):
         dummy_array = np.zeros((1,1,1,1,self.max_box_per_image,4))
 
         netout = self.model.predict([input_image, dummy_array])[0]
-        boxes  = decode_netout(netout, self.anchors, self.nb_class)
+        boxes  = decode_netout(netout, self.anchors, self.nb_class, obj_threshold, nms_threshold)
 
         for i in range(len(boxes)):
             boxes[i].xmin = int(boxes[i].xmin*image_w)
