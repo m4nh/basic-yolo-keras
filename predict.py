@@ -31,6 +31,16 @@ argparser.add_argument(
     '--input',
     help='path to an image or an video (mp4 format)')
 
+argparser.add_argument(
+    '--obj_th',
+    default=0.3,
+    type=float)
+
+argparser.add_argument(
+    '--nms_th',
+    default=0.3,
+    type=float)
+
 
 def _main_(args):
     config_path = args.conf
@@ -85,7 +95,7 @@ def _main_(args):
         video_writer.release()
     else:
         image = cv2.imread(image_path)
-        boxes = yolo.predict(image)
+        boxes = yolo.predict(image, args.obj_th, args.nms_th)
         image = draw_boxes(image, boxes, config['model']['labels'])
 
         print(len(boxes), 'boxes are found')
