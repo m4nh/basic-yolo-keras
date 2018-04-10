@@ -239,9 +239,11 @@ class YOLO(object):
         loss_class = tf.reduce_sum(
             loss_class * class_mask) / (nb_class_box + 1e-6)
 
-        loss = tf.cond(tf.less(seen, self.warmup_batches+1),
-                       lambda: loss_xy + loss_wh + loss_conf + loss_class + 10,
-                       lambda: loss_xy + loss_wh + loss_conf + loss_class)
+        # loss = tf.cond(tf.less(seen, self.warmup_batches+1),
+        #                lambda: loss_xy + loss_wh + loss_conf + loss_class + 10,
+        #                lambda: loss_xy + loss_wh + loss_conf + loss_class)
+
+        loss = loss_xy + loss_wh + loss_conf + loss_class
 
         if self.debug:
             nb_true_box = tf.reduce_sum(y_true[..., 4])
