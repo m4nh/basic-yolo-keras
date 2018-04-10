@@ -10,6 +10,25 @@ from utils import draw_boxes
 from frontend import YOLO
 import json
 
+
+def draw_boxes_with_angle(image, boxes, labels, max_labels, angle_discretization):
+    for box in boxes:
+        cv2.rectangle(image, (box.xmin, box.ymin),
+                      (box.xmax, box.ymax), (0, 255, 0), 1)
+
+        exp_label = box.get_label()
+        label = int(exp_label / (360. / angle_discretization))
+        angle = (exp_label % (360. / angle_discretization)) * \
+            angle_discretization
+
+        cv2.putText(image, "{} -> {} =  {}".format(exp_label, label, int(angle)),
+                    (box.xmin, box.ymin - 13),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1e-3 * image.shape[0],
+                    (0, 255, 0), 1)
+    return image
+
+
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
@@ -96,7 +115,8 @@ def _main_(args):
     else:
         image = cv2.imread(image_path)
         boxes = yolo.predict(image, args.obj_th, args.nms_th)
-        image = draw_boxes(image, boxes, config['model']['labels'])
+        image = draw_boxes_with_angle(
+            image, boxes, config['model']['labels'], 90, 20.0)
 
         print(len(boxes), 'boxes are found')
 
