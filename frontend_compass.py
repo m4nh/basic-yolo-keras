@@ -124,6 +124,9 @@ class YOLOCompass(object):
         # adjust class probabilities
         pred_box_class = y_pred[..., 7:]
 
+        # adjust angle
+        pred_angle = tf.tanh(y_pred[..., 5:7])
+
         """
         Adjust ground truth
         """
@@ -159,6 +162,9 @@ class YOLOCompass(object):
 
         # adjust class probabilities
         true_box_class = tf.argmax(y_true[..., 7:], -1)
+
+        # adjust angle
+        true_angle = y_true[..., 5:7]
 
         """
         Determine the masks
@@ -229,28 +235,31 @@ class YOLOCompass(object):
         nb_class_box = tf.reduce_sum(tf.to_float(class_mask > 0.0))
 
         loss_xy = tf.reduce_sum(
-            tf.square(true_box_xy-pred_box_xy) * coord_mask) / (nb_coord_box + 1e-6) / 2.
+            tf.square(true_box_xy - pred_box_xy) * coord_mask) / (nb_coord_box + 1e-6) / 2.
         loss_wh = tf.reduce_sum(
-            tf.square(true_box_wh-pred_box_wh) * coord_mask) / (nb_coord_box + 1e-6) / 2.
+            tf.square(true_box_wh - pred_box_wh) * coord_mask) / (nb_coord_box + 1e-6) / 2.
         loss_conf = tf.reduce_sum(
-            tf.square(true_box_conf-pred_box_conf) * conf_mask) / (nb_conf_box + 1e-6) / 2.
+            tf.square(true_box_conf - pred_box_conf) * conf_mask) / (nb_conf_box + 1e-6) / 2.
         loss_class = tf.nn.sparse_softmax_cross_entropy_with_logits(
             labels=true_box_class, logits=pred_box_class)
         loss_class = tf.reduce_sum(
             loss_class * class_mask) / (nb_class_box + 1e-6)
 
+        loss_angle_diff = tf.reduce_sum(
+            tf.square(true_angle - pred_angle) * coord_mask) / (nb_coord_box + 1e-6) / 2.
+
         # loss = tf.cond(tf.less(seen, self.warmup_batches+1),
         #                lambda: loss_xy + loss_wh + loss_conf + loss_class + 10,
         #                lambda: loss_xy + loss_wh + loss_conf + loss_class)
 
-        loss = loss_xy + loss_wh + loss_conf + loss_class
+        loss = loss_xy + loss_wh + loss_conf + loss_class + loss_angle_diff
 
         if self.debug:
             nb_true_box = tf.reduce_sum(y_true[..., 4])
             nb_pred_box = tf.reduce_sum(tf.to_float(
                 true_box_conf > 0.5) * tf.to_float(pred_box_conf > 0.3))
 
-            current_recall = nb_pred_box/(nb_true_box + 1e-6)
+            current_recall = nb_pred_box / (nb_true_box + 1e-6)
             total_recall = tf.assign_add(total_recall, current_recall)
 
             loss = tf.Print(loss, [loss_xy],
@@ -259,13 +268,15 @@ class YOLOCompass(object):
                             message='Loss WH \t', summarize=1000)
             loss = tf.Print(loss, [loss_conf],
                             message='Loss Conf \t', summarize=1000)
+            loss = tf.Print(loss, [loss_angle_diff],
+                            message='Loss AngleD \t', summarize=1000)
             loss = tf.Print(loss, [loss_class],
                             message='Loss Class \t', summarize=1000)
             loss = tf.Print(
                 loss, [loss], message='Total Loss \t', summarize=1000)
             loss = tf.Print(loss, [current_recall],
                             message='Current Recall \t', summarize=1000)
-            loss = tf.Print(loss, [total_recall/seen],
+            loss = tf.Print(loss, [total_recall / seen],
                             message='Average Recall \t', summarize=1000)
 
         return loss
