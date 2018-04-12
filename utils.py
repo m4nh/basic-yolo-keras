@@ -143,6 +143,8 @@ def decode_netout_compass(netout, anchors, nb_class, obj_threshold=0.3, nms_thre
 
     # decode the output by the network
     netout[..., 4] = _sigmoid(netout[..., 4])
+    netout[..., 5:7] = _tanh(netout[..., 5:7])
+
     netout[..., 7:] = netout[..., 4][..., np.newaxis] * \
         _softmax(netout[..., 7:])
     netout[..., 7:] *= netout[..., 7:] > obj_threshold
@@ -281,6 +283,10 @@ def _interval_overlap(interval_a, interval_b):
 
 def _sigmoid(x):
     return 1. / (1. + np.exp(-x))
+
+
+def _tanh(x):
+    return np.tanh(x)
 
 
 def _softmax(x, axis=-1, t=-100.):

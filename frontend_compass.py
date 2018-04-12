@@ -281,6 +281,8 @@ class YOLOCompass(object):
             loss = tf.Print(loss, [total_recall / seen],
                             message='Average Recall \t', summarize=1000)
 
+            tf.summary.scalar("loss_angle", loss_angle_diff)
+
         return loss
 
     def load_weights(self, weight_path):
