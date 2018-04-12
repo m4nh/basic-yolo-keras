@@ -14,7 +14,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from backend import TinyYoloFeature, FullYoloFeature, MobileNetFeature, SqueezeNetFeature, Inception3Feature, VGG16Feature, ResNet50Feature
 
 
-class YOLO(object):
+class YOLOCompass(object):
     DEFAULT_LOG_FOLDER = '/tmp/yolo/logs'
 
     def __init__(self, backend,
@@ -23,7 +23,7 @@ class YOLO(object):
                  max_box_per_image,
                  anchors):
 
-        os.makedirs(YOLO.DEFAULT_LOG_FOLDER, exist_ok=True)
+        os.makedirs(YOLOCompass.DEFAULT_LOG_FOLDER, exist_ok=True)
 
         self.input_size = input_size
 
@@ -66,13 +66,13 @@ class YOLO(object):
         features = self.feature_extractor.extract(input_image)
 
         # make the object detection layer
-        output = Conv2D(self.nb_box * (4 + 1 + self.nb_class),
+        output = Conv2D(self.nb_box * (4 + 1 + 2 + self.nb_class),
                         (1, 1), strides=(1, 1),
                         padding='same',
                         name='DetectionLayer',
                         kernel_initializer='lecun_normal')(features)
         output = Reshape((self.grid_h, self.grid_w, self.nb_box,
-                          4 + 1 + self.nb_class))(output)
+                          4 + 1 + 2 + self.nb_class))(output)
         output = Lambda(lambda args: args[0])([output, self.true_boxes])
 
         self.model = Model([input_image, self.true_boxes], output)
@@ -122,7 +122,7 @@ class YOLO(object):
         pred_box_conf = tf.sigmoid(y_pred[..., 4])
 
         # adjust class probabilities
-        pred_box_class = y_pred[..., 5:]
+        pred_box_class = y_pred[..., 7:]
 
         """
         Adjust ground truth
@@ -158,7 +158,7 @@ class YOLO(object):
         true_box_conf = iou_scores * y_true[..., 4]
 
         # adjust class probabilities
-        true_box_class = tf.argmax(y_true[..., 5:], -1)
+        true_box_class = tf.argmax(y_true[..., 7:], -1)
 
         """
         Determine the masks
@@ -182,7 +182,7 @@ class YOLO(object):
         pred_mins = pred_xy - pred_wh_half
         pred_maxes = pred_xy + pred_wh_half
 
-        intersect_mins = tf.maximum(pred_mins,  true_mins)
+        intersect_mins = tf.maximum(pred_mins, true_mins)
         intersect_maxes = tf.minimum(pred_maxes, true_maxes)
         intersect_wh = tf.maximum(intersect_maxes - intersect_mins, 0.)
         intersect_areas = intersect_wh[..., 0] * intersect_wh[..., 1]
@@ -323,7 +323,8 @@ class YOLO(object):
                                          jitter=False)
 
         self.warmup_batches = warmup_epochs * \
-            (train_times*len(train_generator) + valid_times*len(valid_generator))
+            (train_times * len(train_generator) +
+             valid_times * len(valid_generator))
 
         ############################################
         # Compile the model
@@ -348,7 +349,7 @@ class YOLO(object):
                                      save_best_only=True,
                                      mode='min',
                                      period=1)
-        tensorboard = TensorBoard(log_dir=YOLO.DEFAULT_LOG_FOLDER,
+        tensorboard = TensorBoard(log_dir=YOLOCompass.DEFAULT_LOG_FOLDER,
                                   histogram_freq=0,
                                   # write_batch_performance=True,
                                   write_graph=True,
