@@ -10,6 +10,7 @@ from utils import draw_boxes
 from frontend_compass import YOLOCompass
 import json
 import math
+import glob
 
 
 def draw_boxes(image, boxes, labels, rescale=2):
@@ -174,14 +175,26 @@ def _main_(args):
         video_reader.release()
         video_writer.release()
     else:
-        image = cv2.imread(image_path)
-        boxes = yolo.predict(image, args.obj_th, args.nms_th)
-        image = draw_arrows(
-            image, boxes, config['model']['labels'])
+        if os.path.isdir(image_path):
+            image_files = glob.glob(os.path.join(image_path, "*.png"))
+            for f in image_files:
+                image = cv2.imread(f)
+                boxes = yolo.predict(image, args.obj_th, args.nms_th)
+                image = draw_arrows(
+                    image, boxes, config['model']['labels'])
 
-        print(len(boxes), 'boxes are found')
+                print(len(boxes), 'boxes are found')
 
-        cv2.imwrite(image_path[:-4] + '_detected' + image_path[-4:], image)
+                cv2.imwrite(f[:-4] + '_detected' + f[-4:], image)
+        else:
+            image = cv2.imread(image_path)
+            boxes = yolo.predict(image, args.obj_th, args.nms_th)
+            image = draw_arrows(
+                image, boxes, config['model']['labels'])
+
+            print(len(boxes), 'boxes are found')
+
+            cv2.imwrite(image_path[:-4] + '_detected' + image_path[-4:], image)
 
 
 if __name__ == '__main__':
