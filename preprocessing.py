@@ -52,6 +52,9 @@ def parse_annotation(ann_dir, img_dir, labels=[]):
                         else:
                             img['object'] += [obj]
 
+                    if 'pose' in attr.tag:
+                        obj['pose'] = float(attr.text)
+
                     if 'bndbox' in attr.tag:
                         for dim in list(attr):
                             if 'xmin' in dim.tag:
@@ -62,9 +65,6 @@ def parse_annotation(ann_dir, img_dir, labels=[]):
                                 obj['xmax'] = int(round(float(dim.text)))
                             if 'ymax' in dim.tag:
                                 obj['ymax'] = int(round(float(dim.text)))
-                            if 'pose' in dim.tag:
-                                if is_number(dim.text):
-                                    obj['pose'] = float(dim.text)
 
         if len(img['object']) > 0:
             all_imgs += [img]

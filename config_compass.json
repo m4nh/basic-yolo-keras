@@ -4,12 +4,12 @@
         "input_size": 416,
         "anchors": [0.57273, 0.677385, 1.87446, 2.06253, 3.33843, 5.47434, 7.88282, 3.52778, 9.77052, 9.16828],
         "max_box_per_image": 10,
-        "labels": ["clamp", "gripper", "hammer", "scissors", "screwdriver"]
+        "labels": ["Class_0", "Class_1", "Class_2", "Class_3", "Class_4"]
     },
 
     "train": {
-        "train_image_folder": "/Users/daniele/Desktop/CompassTrainingSet1/images",
-        "train_annot_folder": "/Users/daniele/Desktop/CompassTrainingSet1/labels",
+        "train_image_folder": "/Users/daniele/Desktop/temp/TrainableDatasets/scan2_raw/images",
+        "train_annot_folder": "/Users/daniele/Desktop/temp/TrainableDatasets/scan2_raw/labels_pascal",
 
         "train_times": 10,
         "pretrained_weights": "",
