@@ -12,6 +12,28 @@ from keras.optimizers import SGD, Adam, RMSprop
 from preprocessing import BatchGenerator
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from backend import TinyYoloFeature, FullYoloFeature, MobileNetFeature, SqueezeNetFeature, Inception3Feature, VGG16Feature, ResNet50Feature
+import keras
+
+
+# In keras/metrics.py
+def customMetric(y_true, y_pred):
+
+    # adjust angle
+    pred_angle = tf.tanh(y_pred[..., 5:7])
+
+    true_angle = y_true[..., 5:7]
+
+    angle_mask = tf.expand_dims(y_true[..., 4], axis=-1)
+
+    """
+    Finalize the loss
+    """
+    nb_coord_box = tf.reduce_sum(tf.to_float(angle_mask > 0.0))
+
+    loss_angle_diff = tf.reduce_sum(
+        tf.square(true_angle - pred_angle) * angle_mask) / (nb_coord_box + 1e-6) / 2.
+
+    return loss_angle_diff
 
 
 class YOLOCompass(object):
@@ -349,7 +371,8 @@ class YOLOCompass(object):
 
         optimizer = Adam(lr=learning_rate, beta_1=0.9,
                          beta_2=0.999, epsilon=1e-08, decay=0.0)
-        self.model.compile(loss=self.custom_loss, optimizer=optimizer)
+        self.model.compile(loss=self.custom_loss,
+                           optimizer=optimizer, metrics=['customMetric'])
 
         ############################################
         # Make a few callbacks
