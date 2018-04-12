@@ -36,6 +36,42 @@ def draw_boxes(image, boxes, labels, rescale=2):
     return image
 
 
+def draw_arrows(image, boxes, labels, rescale=2):
+    image = image.copy()
+    h, w, _ = image.shape
+    image = cv2.resize(image, (w * rescale, h * rescale))
+    for box in boxes:
+        print("PREDICTED BOX", box.get_label())
+
+        cv2.rectangle(image, (box.xmin*rescale, box.ymin*rescale),
+                      (box.xmax*rescale, box.ymax*rescale), (0, 255, 0), 1)
+
+        print(box.extra_data)
+        sin = box.extra_data['angle']['sin']
+        cos = box.extra_data['angle']['cos']
+        print(sin, cos, math.asin(sin)*180./np.pi, math.acos(cos)*180./np.pi)
+        angle = box.extra_data['angle']['angle_raw']
+
+        center = np.array([
+            (box.xmax * rescale + box.xmin * rescale) * 0.5,
+            (box.ymax * rescale + box.ymin * rescale) * 0.5
+        ])
+
+        tip = center + np.array([np.cos(angle), np.sin(angle)]) * 50
+
+        cv2.circle(image, tuple(center.astype(int)), 4, (0, 0, 255), -1)
+        cv2.line(image, tuple(center.astype(int)), tuple(
+            tip.astype(int)), (255, 255, 255), 2)
+
+        cv2.putText(image, "{}={:.2f}".format(labels[box.get_label()], angle * 180. / np.pi),
+                    tuple((center + np.array([10, 10])).astype(int)),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 255, 0), 1)
+
+    return image
+
+
 def draw_boxes_with_angle(image, boxes, labels, max_labels, angle_discretization):
     for box in boxes:
         cv2.rectangle(image, (box.xmin, box.ymin),
@@ -131,7 +167,7 @@ def _main_(args):
             _, image = video_reader.read()
 
             boxes = yolo.predict(image)
-            image = draw_boxes(image, boxes, config['model']['labels'])
+            image = draw_arrows(image, boxes, config['model']['labels'])
 
             video_writer.write(np.uint8(image))
 
@@ -140,7 +176,7 @@ def _main_(args):
     else:
         image = cv2.imread(image_path)
         boxes = yolo.predict(image, args.obj_th, args.nms_th)
-        image = draw_boxes(
+        image = draw_arrows(
             image, boxes, config['model']['labels'])
 
         print(len(boxes), 'boxes are found')
