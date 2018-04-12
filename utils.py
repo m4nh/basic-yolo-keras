@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 import tensorflow as tf
 import copy
 import cv2
+import math
 
 
 class BoundBox:
@@ -18,6 +19,7 @@ class BoundBox:
 
         self.label = -1
         self.score = -1
+        self.extra_data = {}
 
     def get_label(self):
         if self.label == -1:
@@ -167,6 +169,15 @@ def decode_netout_compass(netout, anchors, nb_class, obj_threshold=0.3, nms_thre
 
                     box = BoundBox(x - w / 2, y - h / 2, x + w / 2, y +
                                    h / 2, confidence, classes)
+
+                    s = netout[row, col, b, 5]
+                    c = netout[row, col, b, 6]
+                    angle_raw = math.atan2(s, c)
+                    box.extra_data['angle'] = {
+                        'sin': s,
+                        'cos': c,
+                        'angle_raw': angle_raw
+                    }
 
                     boxes.append(box)
 

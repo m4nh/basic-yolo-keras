@@ -9,18 +9,28 @@ from preprocessing import parse_annotation
 from utils import draw_boxes
 from frontend_compass import YOLOCompass
 import json
+import math
 
 
-def draw_boxes(image, boxes, labels):
+def draw_boxes(image, boxes, labels, rescale=2):
+    image = image.copy()
+    h, w, _ = image.shape
+    image = cv2.resize(image, (w * rescale, h * rescale))
     for box in boxes:
         print("PREDICTED BOX", box.get_label())
-        cv2.rectangle(image, (box.xmin, box.ymin),
-                      (box.xmax, box.ymax), (0, 255, 0), 1)
-        cv2.putText(image,
-                    labels[box.get_label()] + ' ' + str(box.get_score()),
-                    (box.xmin+5, box.ymin + 20),
+        cv2.rectangle(image, (box.xmin*rescale, box.ymin*rescale),
+                      (box.xmax*rescale, box.ymax*rescale), (0, 255, 0), 1)
+
+        print(box.extra_data)
+        sin = box.extra_data['angle']['sin']
+        cos = box.extra_data['angle']['cos']
+        print(sin, cos, math.asin(sin)*180./np.pi, math.acos(cos)*180./np.pi)
+        angle = box.extra_data['angle']['angle_raw']*180./np.pi
+
+        cv2.putText(image, "{}={:.2f}".format(labels[box.get_label()], angle),
+                    (box.xmin*rescale + 5, box.ymin*rescale + 20),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    1,
+                    0.5,
                     (0, 255, 0), 1)
 
     return image

@@ -4,7 +4,7 @@
         "input_size": 416,
         "anchors": [0.57273, 0.677385, 1.87446, 2.06253, 3.33843, 5.47434, 7.88282, 3.52778, 9.77052, 9.16828],
         "max_box_per_image": 10,
-        "labels": ["Class_0", "Class_1", "Class_2", "Class_3", "Class_4"]
+        "labels": ["clamp", "gripper", "hammer", "scissors", "screwdriver"]
     },
 
     "train": {
@@ -22,6 +22,7 @@
         "no_object_scale": 1.0,
         "coord_scale": 1.0,
         "class_scale": 1.0,
+        "angle_scale": 1.0,
 
         "saved_weights_name": "full_yolo_compass1.h5",
         "debug": true

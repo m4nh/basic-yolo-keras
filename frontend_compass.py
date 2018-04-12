@@ -147,7 +147,7 @@ class YOLOCompass(object):
         pred_mins = pred_box_xy - pred_wh_half
         pred_maxes = pred_box_xy + pred_wh_half
 
-        intersect_mins = tf.maximum(pred_mins,  true_mins)
+        intersect_mins = tf.maximum(pred_mins, true_mins)
         intersect_maxes = tf.minimum(pred_maxes, true_maxes)
         intersect_wh = tf.maximum(intersect_maxes - intersect_mins, 0.)
         intersect_areas = intersect_wh[..., 0] * intersect_wh[..., 1]
@@ -171,6 +171,8 @@ class YOLOCompass(object):
         """
         # coordinate mask: simply the position of the ground truth boxes (the predictors)
         coord_mask = tf.expand_dims(y_true[..., 4], axis=-1) * self.coord_scale
+
+        angle_mask = tf.expand_dims(y_true[..., 4], axis=-1) * self.angle_scale
 
         # confidence mask: penelize predictors + penalize boxes with low IOU
         # penalize the confidence of the boxes, which have IOU with some ground truth box < 0.6
@@ -246,13 +248,13 @@ class YOLOCompass(object):
             loss_class * class_mask) / (nb_class_box + 1e-6)
 
         loss_angle_diff = tf.reduce_sum(
-            tf.square(true_angle - pred_angle) * coord_mask) / (nb_coord_box + 1e-6) / 2.
+            tf.square(true_angle - pred_angle) * angle_mask) / (nb_coord_box + 1e-6) / 2.
 
-        # loss = tf.cond(tf.less(seen, self.warmup_batches+1),
-        #                lambda: loss_xy + loss_wh + loss_conf + loss_class + 10,
-        #                lambda: loss_xy + loss_wh + loss_conf + loss_class)
+        loss = tf.cond(tf.less(seen, self.warmup_batches + 1),
+                       lambda: loss_xy + loss_wh + loss_conf + loss_class + loss_angle_diff + 10,
+                       lambda: loss_xy + loss_wh + loss_conf + loss_class + loss_angle_diff)
 
-        loss = loss_xy + loss_wh + loss_conf + loss_class + loss_angle_diff
+        # loss = loss_xy + loss_wh + loss_conf + loss_class + loss_angle_diff
 
         if self.debug:
             nb_true_box = tf.reduce_sum(y_true[..., 4])
@@ -296,6 +298,7 @@ class YOLOCompass(object):
               no_object_scale,
               coord_scale,
               class_scale,
+              angle_scale,
               saved_weights_name='best_weights.h5',
               debug=False):
 
@@ -305,6 +308,7 @@ class YOLOCompass(object):
         self.no_object_scale = no_object_scale
         self.coord_scale = coord_scale
         self.class_scale = class_scale
+        self.angle_scale = angle_scale
 
         self.debug = debug
 

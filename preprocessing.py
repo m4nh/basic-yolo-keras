@@ -268,7 +268,7 @@ class BatchGenerator(Sequence):
                                 grid_x, best_anchor, 6] = np.cos(angle)
 
                         y_batch[instance_count, grid_y, grid_x,
-                                best_anchor, 7+obj_indx] = 1
+                                best_anchor, 7 + obj_indx] = 1
 
                         # assign the true box to b_batch
                         b_batch[instance_count, 0, 0, 0, true_box_index] = box
