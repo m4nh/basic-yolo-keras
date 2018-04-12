@@ -5,7 +5,7 @@ import tensorflow as tf
 import numpy as np
 import os
 import cv2
-from utils import decode_netout, compute_overlap, compute_ap
+from utils import decode_netout_compass, compute_overlap, compute_ap
 from keras.applications.mobilenet import MobileNet
 from keras.layers.merge import concatenate
 from keras.optimizers import SGD, Adam, RMSprop
@@ -522,13 +522,13 @@ class YOLOCompass(object):
         dummy_array = np.zeros((1, 1, 1, 1, self.max_box_per_image, 4))
 
         netout = self.model.predict([input_image, dummy_array])[0]
-        boxes = decode_netout(netout, self.anchors,
-                              self.nb_class, obj_threshold, nms_threshold)
+        boxes = decode_netout_compass(netout, self.anchors,
+                                      self.nb_class, obj_threshold, nms_threshold)
 
         for i in range(len(boxes)):
-            boxes[i].xmin = int(boxes[i].xmin*image_w)
-            boxes[i].ymin = int(boxes[i].ymin*image_h)
-            boxes[i].xmax = int(boxes[i].xmax*image_w)
-            boxes[i].ymax = int(boxes[i].ymax*image_h)
+            boxes[i].xmin = int(boxes[i].xmin * image_w)
+            boxes[i].ymin = int(boxes[i].ymin * image_h)
+            boxes[i].xmax = int(boxes[i].xmax * image_w)
+            boxes[i].ymax = int(boxes[i].ymax * image_h)
 
         return boxes
